@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<defs><style>
+text{font-family:Arial,Helvetica,sans-serif;fill:#09111a}.title{font-size:38px;font-weight:800}.h{font-size:28px;font-weight:800}.b{font-size:25px;font-weight:700}.s{font-size:19px;font-weight:600}.box{fill:#f8fdff;stroke:#20a8c7;stroke-width:3}.ask{fill:#fffdf7;stroke:#e5a419;stroke-width:3}.db{fill:#ecfcff;stroke:#159ab9;stroke-width:3}.arrow{stroke:#1896be;stroke-width:8;fill:none;marker-end:url(#m)}.arrow2{stroke:#e5a419;stroke-width:8;fill:none;marker-end:url(#m2)}.group{fill:none;stroke:#9eb8c6;stroke-width:2;stroke-dasharray:7 7}
+</style><marker id="m" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#1896be"/></marker><marker id="m2" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#e5a419"/></marker></defs>
+<rect width="1600" height="900" fill="#f2fbff"/>
+<text x="50" y="65" class="title">DOCUMENT INTELLIGENCE SYSTEM ARCHITECTURE: UPLOAD &amp; ASK WORKFLOWS</text>
+<rect x="610" y="95" width="390" height="115" rx="14" class="box"/><text x="805" y="135" text-anchor="middle" class="b">USER</text><line x1="610" y1="155" x2="1000" y2="155" stroke="#20a8c7" stroke-width="2"/><text x="805" y="195" text-anchor="middle" class="b">FRONTEND (HTML/CSS/JS)</text>
+<rect x="650" y="250" width="310" height="185" rx="14" class="box"/><text x="805" y="355" text-anchor="middle" class="h">FLASK API</text><path d="M805 210V250" class="arrow"/>
+<rect x="70" y="235" width="450" height="610" rx="16" class="group"/><text x="145" y="260" class="h">UPLOAD WORKFLOW</text>
+<rect x="95" y="285" width="400" height="90" rx="12" class="box"/><text x="295" y="326" text-anchor="middle" class="b">EXTRACT TEXT</text><text x="295" y="355" text-anchor="middle" class="s">PER PAGE</text>
+<rect x="95" y="400" width="400" height="82" rx="12" class="box"/><text x="295" y="452" text-anchor="middle" class="b">CLEAN</text>
+<rect x="95" y="510" width="400" height="90" rx="12" class="box"/><text x="295" y="548" text-anchor="middle" class="b">CHUNK</text><text x="295" y="578" text-anchor="middle" class="s">(PAGE-BOUND)</text>
+<rect x="95" y="630" width="400" height="82" rx="12" class="box"/><text x="295" y="680" text-anchor="middle" class="b">SUMMARY + KEYWORDS</text>
+<rect x="95" y="745" width="400" height="82" rx="12" class="db"/><text x="295" y="795" text-anchor="middle" class="b">SQLITE</text>
+<path d="M295 375V400M295 482V510M295 600V630M295 712V745" class="arrow"/>
+<path d="M650 350 C570 350 560 330 495 330" class="arrow"/><rect x="560" y="475" width="120" height="52" rx="10" fill="#dff7ff" stroke="#1896be" stroke-width="2"/><text x="620" y="509" text-anchor="middle" class="b">UPLOAD</text>
+<rect x="1100" y="235" width="430" height="610" rx="16" class="group"/><text x="1195" y="260" class="h">ASK WORKFLOW</text>
+<rect x="1125" y="285" width="380" height="90" rx="12" class="ask"/><text x="1315" y="340" text-anchor="middle" class="b">BM25 RETRIEVAL</text>
+<rect x="1125" y="400" width="380" height="82" rx="12" class="ask"/><text x="1315" y="435" text-anchor="middle" class="b">GROUNDING</text><text x="1315" y="465" text-anchor="middle" class="b">GATE</text>
+<rect x="1125" y="510" width="380" height="90" rx="12" class="ask"/><text x="1315" y="548" text-anchor="middle" class="b">ANSWER</text><text x="1315" y="578" text-anchor="middle" class="s">(LLM OR EXTRACTIVE)</text>
+<rect x="1125" y="630" width="380" height="82" rx="12" class="ask"/><text x="1315" y="668" text-anchor="middle" class="b">SOURCES +</text><text x="1315" y="698" text-anchor="middle" class="b">HIGHLIGHTS</text>
+<rect x="1125" y="745" width="380" height="82" rx="12" class="db"/><text x="1315" y="785" text-anchor="middle" class="b">SQLITE</text><text x="1315" y="813" text-anchor="middle" class="s">HISTORY</text>
+<path d="M1315 375V400M1315 482V510M1315 600V630M1315 712V745" class="arrow2"/>
+<path d="M960 350 C1030 350 1045 330 1125 330" class="arrow2"/><rect x="920" y="475" width="95" height="52" rx="10" fill="#e4ffe9" stroke="#34a853" stroke-width="2"/><text x="968" y="509" text-anchor="middle" class="b">ASK</text>
+<rect x="545" y="575" width="520" height="255" rx="16" class="group"/><text x="805" y="615" text-anchor="middle" class="b">FRONTEND SHOWS ANSWER +</text><text x="805" y="647" text-anchor="middle" class="b">PAGE CHIPS + EVIDENCE PANEL</text>
+<rect x="590" y="675" width="285" height="100" rx="10" fill="#fff" stroke="#a8bdc8" stroke-width="2"/><text x="615" y="708" class="s">ANSWER</text><text x="620" y="754" class="h">1.</text><line x1="670" y1="735" x2="835" y2="735" stroke="#b2c5cf" stroke-width="8"/><line x1="670" y1="755" x2="790" y2="755" stroke="#b2c5cf" stroke-width="8"/>
+<rect x="895" y="675" width="125" height="100" rx="10" fill="#fff" stroke="#a8bdc8" stroke-width="2"/><text x="910" y="708" class="s">EVIDENCE</text><line x1="915" y1="730" x2="995" y2="730" stroke="#20a8c7" stroke-width="6"/><line x1="915" y1="750" x2="980" y2="750" stroke="#b2c5cf" stroke-width="6"/>
+<text x="610" y="810" class="s">Page Chips: P1  P2  P3  P4  P5 ...</text>
+</svg>
