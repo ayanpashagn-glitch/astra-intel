@@ -5,6 +5,9 @@ Three modes, chosen from environment variables (see .env.example):
   * openai     – LLM_API_KEY (+ LLM_BASE_URL, LLM_MODEL) set; works with any
                  OpenAI-compatible server, including a local Ollama
   * local      – nothing set: the app still works using extractive answers
+
+The LLM only ever *phrases* an answer from retrieved passages; retrieval,
+page citations and the "not in document" decision do not depend on it.
 """
 from __future__ import annotations
 
@@ -23,6 +26,7 @@ MODES = ("local", "anthropic", "openai")
 
 
 def providers() -> dict:
+    """Which modes are usable right now, based on environment variables only."""
     base = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
     return {
         "local": {"configured": True, "model": "extractive (BM25)", "hint": "Always available. Quotes sentences from the document."},
@@ -36,6 +40,7 @@ def providers() -> dict:
 
 
 def resolve(mode: str | None = None) -> str:
+    """'auto'/None -> best configured mode. Explicit mode must be configured."""
     if mode in (None, "", "auto"):
         p = providers()
         return "anthropic" if p["anthropic"]["configured"] else "openai" if p["openai"]["configured"] else "local"
@@ -63,6 +68,7 @@ def available(mode: str | None = None) -> bool:
 
 
 def complete(system: str, messages: list[dict], max_tokens: int = 700, mode: str | None = None) -> str:
+    """messages: [{'role': 'user'|'assistant', 'content': str}]. Temperature 0 for repeatability."""
     cfg = config(mode)
     try:
         if cfg["mode"] == "anthropic":

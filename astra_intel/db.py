@@ -33,10 +33,10 @@ CREATE TABLE IF NOT EXISTS chunks (
 CREATE INDEX IF NOT EXISTS ix_chunks_doc ON chunks(doc_id);
 CREATE TABLE IF NOT EXISTS messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  scope TEXT NOT NULL,
-  role TEXT NOT NULL,
+  scope TEXT NOT NULL,            -- 'all' or a document id
+  role TEXT NOT NULL,             -- 'user' | 'assistant'
   content TEXT NOT NULL,
-  meta TEXT NOT NULL DEFAULT '{}',
+  meta TEXT NOT NULL DEFAULT '{}',-- JSON: sources, status, mode
   created REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_messages_scope ON messages(scope, id);

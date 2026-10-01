@@ -24,6 +24,7 @@ NOT_FOUND = "The document doesn't contain this information."
 _FOLLOWUP = re.compile(r"\b(it|its|they|their|them|this|that|those|these|he|she|there|one|ones|also|more)\b", re.I)
 _STAT = re.compile(r"\b(percent|percentage|percentages|statistic|statistics|proportion|rate of|fraction|share of)\b", re.I)
 
+# Words that ask for a summary rather than naming a topic ("summarise the key points of this document").
 _SUMMARY_WORDS = {"summaris", "summariz", "summary", "summar", "overview", "point", "gist", "brief", "tldr", "recap",
                   "key", "main", "important", "major", "quick", "short", "highlight", "takeaway", "outline", "everything"}
 _SUMMARY_STEMS = {stem(w) for w in _SUMMARY_WORDS} | {"summarise", "summarize", "summary"}
@@ -73,6 +74,7 @@ def _highlights(text: str, terms: set[str]) -> list[list[int]]:
 
 
 def _coverage(bm: BM25, terms: list[str], text: str) -> float:
+    """IDF-weighted share of query terms present in `text`."""
     present = set(tokenize(text))
     total = sum(bm.idf_of(t) for t in terms)
     return (sum(bm.idf_of(t) for t in terms if t in present) / total) if total else 0.0
@@ -84,6 +86,7 @@ def retrieve(scope, question: str, history: list[dict] | None = None) -> dict:
     if not chunks or not terms:
         return {"passages": [], "terms": terms, "tier": "none", "stat_ok": True, "coverage": 0.0, "bm": bm}
     ranked = bm.rank(terms, TOP_K)
+    # multi-document scope: make sure each document's best chunk can appear for comparisons
     if ranked and (scope in (None, "all")):
         have = {chunks[i]["doc_id"] for i, _ in ranked}
         floor = ranked[0][1] * 0.4
@@ -99,12 +102,14 @@ def retrieve(scope, question: str, history: list[dict] | None = None) -> dict:
         passages.append({"id": f"P{n}", "chunk_id": c["id"], "doc_id": c["doc_id"], "doc_name": c["doc_name"],
                          "page": c["page"], "text": c["text"], "score": round(sc, 3),
                          "highlights": _highlights(c["text"], tset)})
+    # --- grounding gate -------------------------------------------------
     best_chunk = max((_coverage(bm, terms, p["text"]) for p in passages), default=0.0)
     best_sent = 0.0
     for p in passages[:4]:
         for s in split_sentences(p["text"]):
             best_sent = max(best_sent, _coverage(bm, terms, s))
     coverage = max(best_chunk, best_sent)
+    # a question about things that appear nowhere in the corpus is off-topic
     unseen = [t for t in terms if t not in bm.idf]
     off_topic = (len(terms) >= 2 and len(unseen) / len(terms) >= 0.34) or any(t not in bm.idf for t in proper_terms(question))
     tier = "high" if (best_chunk >= 0.6 or best_sent >= 0.5) else ("low" if coverage >= 0.2 else "none")
@@ -112,6 +117,7 @@ def retrieve(scope, question: str, history: list[dict] | None = None) -> dict:
         tier = "none"
     stat_ok = True
     if _STAT.search(question):
+        # a statistic was asked for: some retrieved sentence must contain a number AND the topic terms
         stat_ok = any(
             re.search(r"\d", s) and re.search(r"%|percent", s, re.I) and _coverage(bm, terms, s) >= 0.4
             for p in passages[:4] for s in split_sentences(p["text"])
@@ -120,13 +126,14 @@ def retrieve(scope, question: str, history: list[dict] | None = None) -> dict:
             "coverage": round(coverage, 3), "bm": bm}
 
 
+# ----------------------------------------------------------------------
 def _extractive_answer(question: str, r: dict) -> tuple[str, list[str]]:
     bm, terms = r["bm"], r["terms"]
     cands = []
     for p in r["passages"][:5]:
         for s in split_sentences(p["text"]):
             if not (30 <= len(s) <= 420) or sum(ch.isalpha() for ch in s) / len(s) < 0.7 or _CITATION_MARK.search(s):
-                continue
+                continue  # skip table rows / run-on fragments
             present = set(tokenize(s))
             sc = sum(bm.idf_of(t) for t in terms if t in present) / (len(s) ** 0.25)
             cands.append((sc, -p["score"], p["id"], s))
@@ -162,8 +169,9 @@ SYSTEM_PROMPT = (
 def _llm_answer(question: str, r: dict, history: list[dict], mode: str) -> tuple[str, list[str]]:
     ctx = "\n\n".join(f"[{p['id']}] ({p['doc_name']}, page {p['page']})\n{p['text']}" for p in r["passages"])
     msgs = []
-    for h in history[-6:]:
+    for h in history[-6:]:  # last 3 exchanges for follow-ups
         msgs.append({"role": h["role"], "content": h["content"]})
+    # the API needs strictly alternating roles starting with 'user'
     clean: list[dict] = []
     for m in msgs:
         if clean and clean[-1]["role"] == m["role"]:
@@ -186,6 +194,7 @@ def _llm_answer(question: str, r: dict, history: list[dict], mode: str) -> tuple
 
 
 def _summary_answer(scope, scope_key: str, question: str, chosen: str, t0: float) -> dict:
+    """Summary requests are answered from the summary stored at upload time, not by keyword search."""
     docs = db.list_documents() if scope_key == "all" else [{"id": int(scope_key)}]
     parts = []
     for d in docs:
@@ -206,8 +215,9 @@ def _summary_answer(scope, scope_key: str, question: str, chosen: str, t0: float
 
 
 def answer(scope, question: str, mode: str | None = "auto") -> dict:
+    """mode: 'local' | 'anthropic' | 'openai' | 'auto'. Raises llm.NotConfigured for an unconfigured provider."""
     t0 = time.perf_counter()
-    chosen = llm.resolve(mode)
+    chosen = llm.resolve(mode)                       # raises NotConfigured before any work is done
     scope_key = "all" if scope in (None, "all") else str(scope)
     if is_summary_request(question):
         return _summary_answer(scope, scope_key, question, chosen, t0)
@@ -245,7 +255,7 @@ def answer(scope, question: str, mode: str | None = "auto") -> dict:
         q["cited"] = p["id"] in used
         q["weak"] = status in ("not_found", "low_confidence")
         sources.append(q)
-    if status == "grounded":
+    if status == "grounded":  # cited sources first, then the rest of the evidence
         sources.sort(key=lambda s: (not s["cited"], int(s["id"][1:])))
 
     chunks, bm = _index(scope)

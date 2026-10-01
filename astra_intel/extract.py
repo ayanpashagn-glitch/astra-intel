@@ -14,7 +14,7 @@ from pypdf.errors import PdfReadError
 
 CHUNK_CHARS = 1000
 OVERLAP_CHARS = 180
-MIN_TOTAL_CHARS = 200
+MIN_TOTAL_CHARS = 200  # below this a PDF is treated as empty / scanned
 
 
 class ExtractionError(Exception):
@@ -30,9 +30,9 @@ class Chunk:
 
 def _clean(text: str) -> str:
     text = text.replace("\x00", " ")
-    text = re.sub(r"-\n(?=[a-z])", "", text)
-    text = re.sub(r"\[\s*(?:\d+|citation needed|note \d+)\s*\]", "", text, flags=re.I)
-    text = re.sub(r"(?:https?://|www\.)\S+", " ", text)
+    text = re.sub(r"-\n(?=[a-z])", "", text)  # de-hyphenate line wraps
+    text = re.sub(r"\[\s*(?:\d+|citation needed|note \d+)\s*\]", "", text, flags=re.I)  # [12]
+    text = re.sub(r"(?:https?://|www\.)\S+", " ", text)  # URLs are noise for search and summaries
     text = re.sub(r"[ \t]+", " ", text)
     return text.strip()
 
@@ -58,6 +58,7 @@ def extract_pages(data: bytes, filename: str) -> list[str]:
         except UnicodeDecodeError:
             text = data.decode("latin-1")
         text = _clean(text)
+        # pseudo-pages of ~3000 chars so citations still point somewhere useful
         return [text[i : i + 3000] for i in range(0, len(text), 3000)] or [""]
     if not name.endswith(".pdf"):
         raise ExtractionError("Unsupported file type. Upload a PDF (or .txt / .md).")
@@ -91,7 +92,7 @@ def chunk_page(text: str, page: int, start_idx: int = 0) -> list[Chunk]:
     chunks, pos, idx = [], 0, start_idx
     while pos < len(flat):
         end = min(pos + CHUNK_CHARS, len(flat))
-        if end < len(flat):
+        if end < len(flat):  # prefer to break at a sentence end, then at a space
             cut = max(flat.rfind(". ", pos + CHUNK_CHARS // 2, end), flat.rfind("? ", pos + CHUNK_CHARS // 2, end))
             if cut == -1:
                 cut = flat.rfind(" ", pos + CHUNK_CHARS // 2, end)
@@ -103,7 +104,7 @@ def chunk_page(text: str, page: int, start_idx: int = 0) -> list[Chunk]:
         if end >= len(flat):
             break
         pos = max(end - OVERLAP_CHARS, pos + 1)
-        sp = flat.find(" ", pos)
+        sp = flat.find(" ", pos)  # start the next chunk on a word boundary, never mid-word
         if 0 <= sp < end:
             pos = sp + 1
     return chunks

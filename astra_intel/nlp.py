@@ -20,6 +20,7 @@ STOPWORDS = set(
     might must shall upon via per et al""".split()
 )
 
+# Words that describe the *question*, not the content being asked about.
 META_WORDS = set(
     """document documents doc paper article text pdf report according discussed discuss
     mentioned mention described describe describes say says said state states stated
@@ -27,11 +28,12 @@ META_WORDS = set(
     section sections provided provide present within across following""".split()
 )
 
-_TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9']*|\d+(?:[.,]\d+)*")
+_TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9']*|\d+(?:[.,]\d+)*")  # hyphens split: "radar-guided" -> radar, guided
 _SENT_SPLIT = re.compile(r"(?<=[.!?])\s+(?=[\"'(\[]?[A-Z0-9])")
 
 
 def stem(word: str) -> str:
+    """Very small suffix stripper. Consistency matters more than linguistics."""
     w = word.lower().strip("'-")
     if w.endswith("'s"):
         w = w[:-2]
@@ -45,7 +47,7 @@ def stem(word: str) -> str:
                 break
             w = w[: -len(suf)] + rep
             break
-    if len(w) > 4 and w[-1] == w[-2] and w[-1] not in "ls":
+    if len(w) > 4 and w[-1] == w[-2] and w[-1] not in "ls":  # jamm -> jam
         w = w[:-1]
     return w
 
@@ -61,6 +63,7 @@ def tokenize(text: str, keep_stop: bool = False) -> list[str]:
 
 
 def tokenize_spans(text: str):
+    """Yield (stem, start, end) for every non-stopword token — used for highlighting."""
     for m in _TOKEN_RE.finditer(text):
         t = m.group().lower()
         if t in STOPWORDS:
@@ -69,6 +72,7 @@ def tokenize_spans(text: str):
 
 
 def query_terms(question: str) -> list[str]:
+    """Content stems of a question, minus stopwords and question-meta words."""
     out = []
     for m in _TOKEN_RE.finditer(question):
         t = m.group().lower()
@@ -103,6 +107,7 @@ class BM25:
         self.idf = {t: math.log(1 + (n - c + 0.5) / (c + 0.5)) for t, c in df.items()}
 
     def idf_of(self, term: str) -> float:
+        # unseen term: treat as maximally informative
         return self.idf.get(term, math.log(1 + (self.n + 0.5) / 0.5))
 
     def score(self, terms: list[str], i: int) -> float:
@@ -119,11 +124,12 @@ class BM25:
     def rank(self, terms: list[str], top_k: int = 6) -> list[tuple[int, float]]:
         scored = [(i, self.score(terms, i)) for i in range(self.n)]
         scored = [x for x in scored if x[1] > 0]
-        scored.sort(key=lambda x: (-x[1], x[0]))
+        scored.sort(key=lambda x: (-x[1], x[0]))  # deterministic tie-break
         return scored[:top_k]
 
 
 def proper_terms(question: str) -> list[str]:
+    """Stems of capitalised / ALLCAPS words after the first word (names, acronyms, places)."""
     out = []
     for n, m in enumerate(_TOKEN_RE.finditer(question)):
         raw = m.group()
