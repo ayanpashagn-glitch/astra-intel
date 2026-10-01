@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ASTRA INTEL — Defence document intelligence</title>
+  <link rel="icon" type="image/png" href="/static/img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="side" aria-label="Document library">
+      <img src="/static/img/astra-logo.png" alt="ASTRA — Armed Squad for Tactical Readiness & Awareness" class="logo" width="200">
+      <div class="product"><span>INTEL</span> document intelligence</div>
+
+      <h2 class="side-h">Library</h2>
+      <label id="drop" class="drop" tabindex="0">
+        <input id="file" type="file" accept=".pdf,.txt,.md,application/pdf" hidden>
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <strong>Upload a PDF</strong>
+        <span>Drop here or click · max 25 MB</span>
+      </label>
+      <div id="uploadState" class="upload-state" hidden></div>
+
+      <ul id="docList" class="doc-list"></ul>
+
+      <div id="samples" class="samples" hidden>
+        <p>Starter documents</p>
+        <div id="sampleButtons"></div>
+      </div>
+
+      <div class="side-foot">
+        <button id="sysBtn" class="side-btn" type="button">System details</button>
+        <p>Answers come only from your documents.</p>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="bar">
+        <div class="scope">
+          <h1 id="scopeTitle">ASTRA INTEL</h1>
+          <p id="scopeMeta"></p>
+        </div>
+        <div class="modebox">
+          <span class="lbl" id="modeLbl">Answer engine</span>
+          <div id="modeSwitch" class="seg" role="radiogroup" aria-labelledby="modeLbl"></div>
+        </div>
+      </header>
+
+      <div id="banner" class="banner" hidden role="alert"></div>
+
+      <div class="work">
+        <section class="chat" aria-label="Conversation">
+          <article id="brief" class="brief"></article>
+          <div id="thread" class="thread" aria-live="polite"></div>
+          <div id="suggest" hidden></div>
+          <div class="composer">
+            <textarea id="q" rows="1" maxlength="1000" placeholder="Ask a question about the selected document(s)" aria-label="Your question"></textarea>
+            <button id="clear" class="ghost" type="button" title="Clear this conversation">Clear</button>
+            <button id="send" class="send" type="button" aria-label="Ask">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14m0 0-6-6m6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </section>
+
+        <aside class="evidence" aria-label="Source passages">
+          <div class="ev-head"><h2>Evidence</h2><p>The exact passages behind each answer</p></div>
+          <div id="evidence" class="ev-list"></div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="sysDialog" class="sys" aria-labelledby="sysTitle">
+    <div class="sys-head"><h2 id="sysTitle">System details</h2><button id="sysClose" class="ghost" type="button">Close</button></div>
+    <div id="sysBody"></div>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
