@@ -1,0 +1,5 @@
+# normalise line endings (the project was built on Linux, you may be on Windows)
+* text=auto
+*.pdf binary
+*.png binary
+*.jpg binary
